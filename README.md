@@ -1,69 +1,69 @@
 # 🚣‍♂️ RowComputer ESP32 (SpeedCoach Clone)
 
-Un computer di bordo fai-da-te per il canottaggio, ispirato al celebre NK SpeedCoach. Basato su un **ESP32-S3 Mini**, utilizza un accelerometro per contare i colpi (SPM) e un modulo GPS per calcolare la distanza e il passo sui 500 metri. Il tutto visualizzato su uno schermo TFT a colori con un'interfaccia ad alto contrasto e aggiornamenti *flicker-free*.
+A DIY onboard computer for rowing, inspired by the famous NK SpeedCoach. Based on an **ESP32-S3 Mini**, it uses an accelerometer to count strokes (SPM) and a GPS module to calculate distance and the 500m split. Everything is displayed on a color TFT screen with a high-contrast, *flicker-free* interface.
 
-## 🛠 Hardware Necessario
+## 🛠 Hardware Required
 
-* **Microcontrollore:** ESP32-S3 Mini (SuperMini)
-* **Display:** Modulo TFT SPI 2.4" o 2.8" (Driver **ST7789**)
-* **Accelerometro/Giroscopio:** MPU-6050 (Interfaccia I2C)
-* **Ricevitore GPS:** Beitian BN-280 o generico NEO-6M (Interfaccia Seriale UART)
-* **Alimentazione:** 3x batterie stilo AA (collegate ai pin 5V e GND) o Powerbank (USB-C)
+* **Microcontroller:** ESP32-S3 Mini (SuperMini)
+* **Display:** 2.4" or 2.8" SPI TFT Module (**ST7789** Driver)
+* **Accelerometer/Gyroscope:** MPU-6050 (I2C Interface)
+* **GPS Receiver:** Beitian BN-280 or generic NEO-6M (UART Serial Interface)
+* **Power Supply:** 3x AA batteries (connected to 5V and GND pins) or Powerbank (USB-C)
 
-## 🔌 Schema di Collegamento (Pinout)
+## 🔌 Wiring (Pinout)
 
-Tutti i moduli comunicano a 3.3V, quindi non servono resistenze aggiuntive o level shifter tra i pin dati. *(Nota: i pin VCC del display e del GPS possono richiedere 5V, verifica le specifiche delle tue basette).*
+All modules communicate at 3.3V, so no additional resistors or level shifters are needed between the data pins. *(Note: the VCC pins of the display and GPS might require 5V, check the silkscreen on your specific boards).*
 
-### Display TFT (SPI)
-| Pin TFT | Pin ESP32-S3 | Note |
+### TFT Display (SPI)
+| TFT Pin | ESP32-S3 Pin | Note |
 | :--- | :--- | :--- |
-| VCC | 5V | Alimentazione |
-| GND | GND | Massa |
+| VCC | 5V | Power supply |
+| GND | GND | Ground |
 | CS | 5 | Chip Select |
 | DC | 7 | Data / Command |
 | RES / RST | 10 | Reset |
 | SDA / MOSI | 11 | Master Out Slave In |
 | SCL / SCK | 12 | Clock |
-| BLK / LED | 3V3 | Retroilluminazione sempre ON |
+| BLK / LED | 3V3 | Backlight always ON |
 
-### Modulo GPS (UART)
-| Pin GPS | Pin ESP32-S3 | Note |
+### GPS Module (UART)
+| GPS Pin | ESP32-S3 Pin | Note |
 | :--- | :--- | :--- |
-| VCC | 5V | Alimentazione |
-| GND | GND | Massa |
-| TX | 3 | Collegato al pin RX2 dell'ESP32 |
-| RX | 4 | Collegato al pin TX2 dell'ESP32 |
+| VCC | 5V | Power supply |
+| GND | GND | Ground |
+| TX | 3 | Connect to the ESP32 RX2 pin |
+| RX | 4 | Connect to the ESP32 TX2 pin |
 
-### Accelerometro MPU-6050 (I2C)
-| Pin MPU | Pin ESP32-S3 | Note |
+### Accelerometer MPU-6050 (I2C)
+| MPU Pin | ESP32-S3 Pin | Note |
 | :--- | :--- | :--- |
-| VCC | 3V3 | Alimentazione |
-| GND | GND | Massa |
-| SDA | 8 | Dati I2C |
-| SCL | 9 | Clock I2C |
+| VCC | 3V3 | Power supply |
+| GND | GND | Ground |
+| SDA | 8 | I2C Data |
+| SCL | 9 | I2C Clock |
 
-## 📦 Dipendenze Software (Librerie Arduino)
+## 📦 Software Dependencies (Arduino Libraries)
 
-Per compilare questo codice tramite l'IDE di Arduino, installa le seguenti librerie tramite il **Library Manager**:
-1. `Adafruit GFX Library` (Motore grafico base)
-2. `Adafruit ST7735 and ST7789 Library` (Driver specifico per lo schermo)
-3. `Adafruit MPU6050` (Driver per l'accelerometro)
-4. `Adafruit Unified Sensor` (Dipendenza hardware richiesta da Adafruit)
-5. `TinyGPSPlus` di Mikal Hart (Parsing dei dati satellitari grezzi NMEA)
+To compile this code via the Arduino IDE, install the following libraries using the **Library Manager**:
+1. `Adafruit GFX Library` (Core graphics engine)
+2. `Adafruit ST7735 and ST7789 Library` (Hardware-specific display driver)
+3. `Adafruit MPU6050` (Accelerometer driver)
+4. `Adafruit Unified Sensor` (Hardware dependency required by Adafruit)
+5. `TinyGPSPlus` by Mikal Hart (Parsing raw NMEA satellite data)
 
-## ⚙️ Configurazione e Calibrazione
+## ⚙️ Configuration and Calibration
 
-Prima del varo in acqua, potresti aver bisogno di affinare alcuni parametri in cima al file sorgente a seconda di come posizioni il case sulla barca:
+Before taking it out on the water, you might need to tweak a few parameters at the top of the source file depending on how you mount the case on the boat:
 
-* `THRESHOLD_ACC = 16.0`: È la sensibilità per rilevare l'attacco in acqua (palata). Se lo strumento conta "colpi fantasma", alza il valore. Se perde colpi effettivi, abbassalo. *(Nota: non scendere sotto 9.81, che è l'accelerazione di gravità terrestre di base).*
-* `DEBOUNCE_STROKE = 1000`: Il "tempo morto" in millisecondi (es. 1 secondo) richiesto tra un colpo e l'altro, utile per evitare di contare il ritorno del carrello come una seconda palata.
-* **Filtro Esponenziale (EMA) SPM:** Nel `loop()` trovi la formula `spm = (spm * 0.7) + (spmIstant * 0.3);`. Modifica queste percentuali (la somma deve fare sempre 1.0) per rendere l'aggiornamento a display più stabile/lento (es. `0.8` e `0.2`) o più reattivo/nervoso (es. `0.5` e `0.5`).
+* `THRESHOLD_ACC = 16.0`: This is the sensitivity for detecting the catch (stroke). If the device counts "ghost strokes", increase this value. If it misses real strokes, decrease it. *(Note: do not go below 9.81, which is the baseline Earth's gravity acceleration).*
+* `DEBOUNCE_STROKE = 1000`: The "dead time" in milliseconds (e.g., 1000ms = 1 second) required between one stroke and the next. This prevents the slide recovery from being accidentally counted as a second stroke.
+* **Exponential Moving Average (EMA) Filter for SPM:** In the `loop()` function, you will find the formula `spm = (spm * 0.7) + (spmIstant * 0.3);`. Modify these percentages (the sum must always equal 1.0) to make the display update more stable/slow (e.g., `0.8` and `0.2`) or more reactive/nervous (e.g., `0.5` and `0.5`).
 
-## 🚀 Uso e Interfaccia
+## 🚀 Usage and Interface
 
-L'interfaccia grafica è divisa in 4 quadranti ad alta visibilità progettati per la lettura sotto il sole:
+The graphical interface is divided into 4 high-visibility quadrants designed for readability under direct sunlight:
 
-1. **Quadrante in Alto a Sinistra (Giallo):** SPM (Strokes per Minute). Mostra la cadenza. Si azzera automaticamente se non vengono rilevati colpi per più di 4 secondi.
-2. **Quadrante in Alto a Destra (Ciano):** Split /500m. Calcola la proiezione del tempo necessario per percorrere 500 metri basata sulla velocità GPS istantanea.
-3. **Quadrante in Basso a Sinistra (Bianco):** Cronometro nel formato `MM:SS`. Si avvia in automatico all'accensione dello strumento.
-4. **Quadrante in Basso a Destra (Verde):** Metri totali percorsi. Integra un filtro anti-deriva GPS: la distanza si aggiorna solo se la barca viaggia a più di 2.0 km/h.
+1. **Top Left Quadrant (Yellow):** SPM (Strokes per Minute). Shows the stroke rate. It automatically resets to zero if no strokes are detected for more than 4 seconds.
+2. **Top Right Quadrant (Cyan):** /500m Split. Calculates the projected time needed to cover 500 meters based on the instantaneous GPS speed.
+3. **Bottom Left Quadrant (White):** Stopwatch in `MM:SS` format. Starts automatically when the device is powered on.
+4. **Bottom Right Quadrant (Green):** Total meters traveled. Includes an anti-drift GPS filter: the distance only updates if the boat is moving faster than 2.0 km/h.
