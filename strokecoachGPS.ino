@@ -29,7 +29,7 @@ TinyGPSPlus gps;
 // STATUS VARIABLE
 // strats
 int spm = 0;                  // Strokes Per Minute 
-String split = "--:--";      // split /500m
+String split = "00:00";      // split /500m
 unsigned long startTime = 0;
 unsigned long totalMeters = 0; 
 double lastLat = 0, lastLon = 0; // for the distance
@@ -44,6 +44,12 @@ int oldSpm = -1;
 String oldSplit = "";
 unsigned long oldFormattedTime = 999999;
 unsigned long oldMeters = 999999;
+
+//update variable
+unsigned long newLastUpdate = 0;
+unsigned long oldLastUpdate = 0;
+unsigned long watchdog = 15000;
+bool changed = true;
 
 // FUNCTIONS
 
@@ -79,7 +85,7 @@ String formattaTempo(unsigned long totalSeconds) {
 
 // compute the split
 String splitCalc(double kmph) {
-  if (kmph < 1.5) return "--:--"; // too slow to compute
+  if (kmph < 1.5) return "00:00"; // too slow to compute
 
   // time for 500m in seconds = (500 * 3.6) / kmph = 1800 / kmph
   int totalSeconds500m = 1800 / kmph;
@@ -117,10 +123,54 @@ void setup() {
   drawInterface();
   
   startTime = millis(); // start chrono
+
+  newLastUpdate = millis();
+  oldLastUpdate = millis();
 }
 
 // LOOP 
 void loop() {
+  // reset everything when stops for 15 sec
+  tft.drawFastVLine(160, 0, 240, ST77XX_WHITE);
+  oldLastUpdate = millis();
+  
+  if(!changed && oldLastUpdate - newLastUpdate > watchdog) {
+    changed = true;
+
+    spm = 0;
+    oldSpm = 0;
+    totalMeters = 0;
+    oldMeters = 0;
+    oldSplit = "00:00";
+  
+    tft.setTextSize(5);
+    tft.setCursor(170, 50);
+    tft.setTextColor(ST77XX_BLACK, ST77XX_BLACK);
+    tft.print(oldSplit + " ");
+    tft.setCursor(170, 50);
+    tft.setTextColor(ST77XX_CYAN, ST77XX_BLACK);
+    tft.print("00:00");
+      
+    tft.setTextSize(10);
+    tft.setCursor(20, 30);
+    tft.setTextColor(ST77XX_BLACK, ST77XX_BLACK);
+    if (oldSpm < 10) tft.print("0");
+    tft.print(oldSpm);
+    tft.setCursor(20, 30);
+    tft.setTextColor(ST77XX_YELLOW, ST77XX_BLACK); // Giallo per SPM
+    tft.print("00");
+
+    tft.setTextSize(5);
+    tft.setCursor(170, 160);    
+    tft.setTextColor(ST77XX_BLACK, ST77XX_BLACK);
+    tft.print(String(oldMeters) + " ");
+    tft.setCursor(170, 160);
+    tft.setTextColor(ST77XX_GREEN, ST77XX_BLACK);
+    tft.print("0");
+
+    startTime = millis();
+  }
+
   // always read the gps
   while (Serial1.available() > 0) {
     gps.encode(Serial1.read());
@@ -159,6 +209,10 @@ void loop() {
       
       // Turn on the led to signal the stroke (esp32)
       digitalWrite(15, HIGH); 
+
+      newLastUpdate = millis();
+      changed = false;
+
     }
   }
   // Reset when acceleration return normal (end)
@@ -183,6 +237,8 @@ void loop() {
       // Update the total meters
       if (partialDistance > 1.0 && gps.speed.kmph() > 2.0) {
         totalMeters += partialDistance;
+        newLastUpdate = millis();
+        changed = false;
       }
     }
     lastLat = gps.location.lat();
