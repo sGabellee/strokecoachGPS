@@ -17,7 +17,7 @@
 
 //  CONFIGURATION ALGORITHM STROKECOACH
 // threshold for the accelerometer : lower mean sensible (keep over 9.81) 
-const float THRESHOLD_ACC = 4.0; 
+const float THRESHOLD_ACC = 3.0; 
 // Minimum interval between strokes, 1000ms = max 60 stroke/min
 const unsigned long DEBOUNCE_STROKE = 1000; 
 
