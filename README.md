@@ -51,19 +51,33 @@ To compile this code via the Arduino IDE, install the following libraries using 
 4. `Adafruit Unified Sensor` (Hardware dependency required by Adafruit)
 5. `TinyGPSPlus` by Mikal Hart (Parsing raw NMEA satellite data)
 
+## 🧠 Advanced Stroke Algorithm
+
+This project uses a dynamic **High-Pass Filter** to isolate linear acceleration. 
+Instead of relying on absolute raw data (which includes Earth's constant 9.81 m/s² pull), the code calculates an Exponential Moving Average (EMA) of the gravity vector and subtracts it in real-time. 
+**Benefit:** You can mount the device at any angle on the boat. The algorithm will automatically find the "down" direction, eliminate it, and measure only the pure horizontal push of your strokes.
+
 ## ⚙️ Configuration and Calibration
 
-Before taking it out on the water, you might need to tweak a few parameters at the top of the source file depending on how you mount the case on the boat:
+Before taking it out on the water, you might need to tweak a few parameters at the top of the source file (`strokecoachGPS.ino`):
 
-* `THRESHOLD_ACC = 16.0`: This is the sensitivity for detecting the catch (stroke). If the device counts "ghost strokes", increase this value. If it misses real strokes, decrease it. *(Note: do not go below 9.81, which is the baseline Earth's gravity acceleration).*
-* `DEBOUNCE_STROKE = 1000`: The "dead time" in milliseconds (e.g., 1000ms = 1 second) required between one stroke and the next. This prevents the slide recovery from being accidentally counted as a second stroke.
-* **Exponential Moving Average (EMA) Filter for SPM:** In the `loop()` function, you will find the formula `spm = (spm * 0.7) + (spmIstant * 0.3);`. Modify these percentages (the sum must always equal 1.0) to make the display update more stable/slow (e.g., `0.8` and `0.2`) or more reactive/nervous (e.g., `0.5` and `0.5`).
+* `THRESHOLD_ACC = 3.0`: The sensitivity for detecting the catch (stroke). Since gravity is dynamically removed, this value represents the pure net acceleration. If the device counts "ghost strokes" during recovery, increase it (e.g., to 4.0). If it misses real strokes, decrease it. 
+* `DEBOUNCE_STROKE = 1000`: The "dead time" in milliseconds (e.g., 1000ms = 1 second) required between one stroke and the next. This acts as a shield, preventing the slide recovery or final pull from being accidentally counted as a second stroke.
+* **EMA Filter for SPM:** In the `loop()`, you will find `spm = (spm * 0.7) + (spmIstant * 0.3);`. Modify these percentages (sum must be 1.0) to make the display update more stable (e.g., `0.8` / `0.2`) or more reactive (e.g., `0.5` / `0.5`).
+
+## 📁 Project Structure & Testing Tools
+
+The repository is organized to help you test individual hardware components before running the full complex code:
+
+* `/strokecoachGPS.ino`: The main application, with the 15s Watchdog( Reset ) logic.
+* `/test/testGps/testGps.ino`: Isolates the GPS module. Use this to verify wiring and satellite lock (cold start) without screen flickering.
+* `/test/testMpu/testMpu.ino`: A real-time telemetry dashboard for the MPU-6050. It displays raw axis data, the gravity filter in action, and the net vector. Perfect for testing your `THRESHOLD_ACC` sensitivity off the water.
 
 ## 🚀 Usage and Interface
 
 The graphical interface is divided into 4 high-visibility quadrants designed for readability under direct sunlight:
 
-1. **Top Left Quadrant (Yellow):** SPM (Strokes per Minute). Shows the stroke rate. It automatically resets to zero if no strokes are detected for more than 4 seconds.
-2. **Top Right Quadrant (Cyan):** /500m Split. Calculates the projected time needed to cover 500 meters based on the instantaneous GPS speed.
+1. **Top Left Quadrant (Yellow):** SPM (Strokes per Minute). Shows the stroke rate. Never Reset to zero.
+2. **Top Right Quadrant (Cyan):** /500m Split. Calculates the projected time needed to cover 500 meters based on instantaneous GPS speed.
 3. **Bottom Left Quadrant (White):** Stopwatch in `MM:SS` format. Starts automatically when the device is powered on.
-4. **Bottom Right Quadrant (Green):** Total meters traveled. Includes an anti-drift GPS filter: the distance only updates if the boat is moving faster than 2.0 km/h.
+4. **Bottom Right Quadrant (Green):** Total meters traveled. Includes an anti-drift filter: the distance only updates if the boat is moving > 2.0 km/h. An idle watchdog resets all stats if the boat is stationary for 15 seconds.
