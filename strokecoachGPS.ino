@@ -17,7 +17,7 @@
 
 //  CONFIGURATION ALGORITHM STROKECOACH
 // threshold for the accelerometer : lower mean sensible (keep over 9.81) 
-const float THRESHOLD_ACC = 16.0; 
+const float THRESHOLD_ACC = 4.0; 
 // Minimum interval between strokes, 1000ms = max 60 stroke/min
 const unsigned long DEBOUNCE_STROKE = 1000; 
 
@@ -50,6 +50,9 @@ unsigned long newLastUpdate = 0;
 unsigned long oldLastUpdate = 0;
 unsigned long watchdog = 15000;
 bool changed = true;
+
+// variables for gravity
+float gravityX = 0, gravityY = 0, gravityZ = 0;
 
 // FUNCTIONS
 
@@ -181,10 +184,19 @@ void loop() {
   mpu.getEvent(&a, &g, &temp);
 
   // Compute the magnitude (vector)
-  // sqrt(x^2 + y^2 + z^2)
-  float totalAccel = sqrt(a.acceleration.x * a.acceleration.x + 
-                           a.acceleration.y * a.acceleration.y + 
-                           a.acceleration.z * a.acceleration.z);
+  // low pass filter: find where the gravity is
+  const float alpha = 0.8;
+  gravityX = alpha * gravityX + (1 - alpha) * a.acceleration.x;
+  gravityY = alpha * gravityY + (1 - alpha) * a.acceleration.y;
+  gravityZ = alpha * gravityZ + (1 - alpha) * a.acceleration.z;
+
+  // remove the gravity
+  float linearX = a.acceleration.x - gravityX;
+  float linearY = a.acceleration.y - gravityY;
+  float linearZ = a.acceleration.z - gravityZ;
+
+  // now it computes
+  float totalAccel = sqrt(linearX * linearX + linearY * linearY + linearZ * linearZ);
 
   unsigned long currentTime = millis();
 
@@ -216,7 +228,7 @@ void loop() {
     }
   }
   // Reset when acceleration return normal (end)
-  if (totalAccel < (THRESHOLD_ACC - 3.0) && stroking) {
+  if (totalAccel < (THRESHOLD_ACC * 0.5) && stroking) {
     stroking = false;
     digitalWrite(15, LOW); // turn off the led
   }
@@ -251,7 +263,7 @@ void loop() {
     lastDataUpdate = currentTime;
 
     // QUADRANTE 1: SPM ( HIGH LEFT, GIGANT) 
-    if (spm != oldSpm) {
+    if (spm != oldSpm && spm != 0) {
       tft.setTextSize(10);
       tft.setCursor(20, 30);
       // overwrite with a background to not update all the screen
