@@ -15,6 +15,8 @@
 #define RXD2      3 // TX GPS
 #define TXD2      4 // RX GPS
 
+#define BTN_RESET 6
+
 //  CONFIGURATION ALGORITHM STROKECOACH
 // threshold for the accelerometer : lower mean sensible (keep over 9.81) 
 const float THRESHOLD_ACC = 3.0; 
@@ -53,6 +55,10 @@ bool changed = true;
 
 // variables for gravity
 float gravityX = 0, gravityY = 0, gravityZ = 0;
+
+//Button variables
+unsigned long ultimoPremuto = 0;
+const unsigned long RITARDO_DEBOUNCE = 500;
 
 // FUNCTIONS
 
@@ -124,7 +130,9 @@ void setup() {
 
   delay(2000); // Pause to read
   drawInterface();
-  
+
+  pinMode(BTN_RESET, INPUT_PULLUP); //button init
+
   startTime = millis(); // start chrono
 
   newLastUpdate = millis();
@@ -137,6 +145,49 @@ void loop() {
   tft.drawFastVLine(160, 0, 240, ST77XX_WHITE);
   oldLastUpdate = millis();
   
+  // RESET BUTTON
+  // when we press
+  if (digitalRead(BTN_RESET) == LOW) {
+    
+    // debouncing system
+    if (millis() - ultimoPremuto > RITARDO_DEBOUNCE) {
+      
+      // set everything to zero
+      spm = 0;
+      oldSpm = 0;
+      totalMeters = 0;
+      oldMeters = 0;
+      oldSplit = "00:00";
+      startTime = millis(); 
+      
+      // reset whatchdog timer
+      newLastUpdate = millis();
+      oldLastUpdate = millis();
+      changed = true;
+
+      // clear and rewrite everything
+      tft.fillScreen(ST77XX_BLACK);
+      drawInterface();
+      
+      tft.setTextSize(10);
+      tft.setTextColor(ST77XX_YELLOW, ST77XX_BLACK);
+      tft.setCursor(20, 30);
+      tft.print("00");
+
+      tft.setTextSize(5);
+      tft.setTextColor(ST77XX_CYAN, ST77XX_BLACK);
+      tft.setCursor(170, 50);
+      tft.print("00:00");
+
+      tft.setTextColor(ST77XX_GREEN, ST77XX_BLACK);
+      tft.setCursor(170, 160);
+      tft.print("0   "); // add spaces to clear big numbers
+
+      // debounce timer update
+      ultimoPremuto = millis();
+    }
+  }
+
   if(!changed && oldLastUpdate - newLastUpdate > watchdog) {
     changed = true;
 

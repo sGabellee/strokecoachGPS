@@ -9,6 +9,7 @@ A DIY onboard computer for rowing, inspired by the famous NK SpeedCoach. Based o
 * **Accelerometer/Gyroscope:** MPU-6050 (I2C Interface)
 * **GPS Receiver:** Beitian BN-280 or generic NEO-6M (UART Serial Interface)
 * **Power Supply:** 3x AA batteries (connected to 5V and GND pins) or Powerbank (USB-C)
+* **Reset Button:** A standard 2-pin or 4-pin momentary push-button.
 
 ## 🔌 Wiring (Pinout)
 
@@ -41,6 +42,12 @@ All modules communicate at 3.3V, so no additional resistors or level shifters ar
 | GND | GND | Ground |
 | SDA | 8 | I2C Data |
 | SCL | 9 | I2C Clock |
+
+### Reset Button
+| Button Pin | ESP32-S3 Pin | Note |
+| :--- | :--- | :--- |
+| Pin 1 | GND | Ground |
+| Pin 2 | 6 | Uses internal pull-up (`INPUT_PULLUP`), no external resistor needed |
 
 ## 📦 Software Dependencies (Arduino Libraries)
 
@@ -81,3 +88,4 @@ The graphical interface is divided into 4 high-visibility quadrants designed for
 2. **Top Right Quadrant (Cyan):** /500m Split. Calculates the projected time needed to cover 500 meters based on instantaneous GPS speed.
 3. **Bottom Left Quadrant (White):** Stopwatch in `MM:SS` format. Starts automatically when the device is powered on.
 4. **Bottom Right Quadrant (Green):** Total meters traveled. Includes an anti-drift filter: the distance only updates if the boat is moving > 2.0 km/h. An idle watchdog resets all stats if the boat is stationary for 15 seconds.
+5. **Manual Reset Button:** A physical push-button connected to Pin 6 allows you to instantly clear all current session data (Chrono, Meters, SPM, Split) and start a new interval without restarting the device.
