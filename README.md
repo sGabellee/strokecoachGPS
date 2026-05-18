@@ -1,6 +1,6 @@
 # RowComputer ESP32
 
-A DIY onboard computer for rowing, inspired by the famous NK SpeedCoach. Based on an **ESP32-S3 Mini**, it uses an accelerometer to count strokes (SPM) and a GPS module to calculate distance and the 500m split. Everything is displayed on a color TFT screen with a high-contrast, *flicker-free* interface.
+A DIY onboard computer for rowing, Still on developing. Based on an **ESP32-S3 Mini**, it uses an accelerometer to count strokes (SPM) and a GPS module to calculate distance and the 500m split. Everything is displayed on a color TFT screen with a high-contrast, *flicker-free* interface.
 
 ## 🛠 Hardware Required
 
