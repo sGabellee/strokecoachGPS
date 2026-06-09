@@ -5,11 +5,14 @@ A DIY onboard computer for rowing, Still on developing. Based on an **ESP32-S3 M
 ## 🛠 Hardware Required
 
 * **Microcontroller:** ESP32-S3 Mini (SuperMini)
-* **Display:** 2.4" or 2.8" SPI TFT Module (**ST7789** Driver)
+* **Display:** 2.4" or 2.8" SPI TFT Module (**ST7789** Driver) — *not readable in direct sunlight; see [HARDWARE.md](HARDWARE.md) for a sunlight-readable upgrade.*
 * **Accelerometer/Gyroscope:** MPU-6050 (I2C Interface)
-* **GPS Receiver:** Beitian BN-280 or generic NEO-6M (UART Serial Interface)
+* **GPS Receiver:** Beitian BN-280 or generic NEO-6M (UART Serial Interface) — *for a steadier /500m split, see the GPS/antenna upgrade in [HARDWARE.md](HARDWARE.md).*
 * **Power Supply:** 3x AA batteries (connected to 5V and GND pins) or Powerbank (USB-C)
 * **Reset Button:** A standard 2-pin or 4-pin momentary push-button.
+* **Stroke LED (optional):** A LED (with series resistor) on Pin 15 that blinks on every detected stroke.
+
+> 🔧 **Looking to improve the device?** [HARDWARE.md](HARDWARE.md) has researched, buyable upgrades for a **sunlight-readable display** and a **better GPS module/antenna**.
 
 ## 🔌 Wiring (Pinout)
 
@@ -48,6 +51,12 @@ All modules communicate at 3.3V, so no additional resistors or level shifters ar
 | :--- | :--- | :--- |
 | Pin 1 | GND | Ground |
 | Pin 2 | 6 | Uses internal pull-up (`INPUT_PULLUP`), no external resistor needed |
+
+### Stroke LED (optional)
+| LED Pin | ESP32-S3 Pin | Note |
+| :--- | :--- | :--- |
+| Anode (+) | 15 | Through a ~330 Ω series resistor; blinks on every detected stroke |
+| Cathode (-) | GND | Ground |
 
 ## 📦 Software Dependencies (Arduino Libraries)
 

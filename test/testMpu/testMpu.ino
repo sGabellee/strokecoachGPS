@@ -54,6 +54,10 @@ void setup() {
   tft.setCursor(10, 190); tft.print("STATO:");
   tft.setCursor(200, 190); tft.print("SPM:");
 
+  // LED stroke indicator (must be set as OUTPUT or digitalWrite() does nothing)
+  pinMode(15, OUTPUT);
+  digitalWrite(15, LOW);
+
   // MPU
   Wire.begin(8, 9);
   mpu.begin(0x68, &Wire); // Avvio forzato ignorando l'ID
